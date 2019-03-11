@@ -1,0 +1,26 @@
+#block_row1 
+{
+    display: block;
+    margin: auto;
+}
+
+#block_row2
+{
+    display: block;
+    margin: auto;
+}
+
+div.block_row1 > *
+{
+    float: left;
+    width: 12.1vw;
+    height: 49vh;
+}
+
+div.block_row2 > *
+{
+    float: left;
+    width: 12.1vw;
+    height: 49vh;
+}
+
