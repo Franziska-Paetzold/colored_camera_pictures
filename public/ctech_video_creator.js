@@ -27,6 +27,8 @@ let color16 = [252,233,21];
 
 let colors = [color1,color2,color3,color4,color5,color6,color7,color8,color9,color10,color11,color12,color13,color14,color15,color16];
 
+//block canvases + images
+let canvasDataLists = [];
 //let socket = io();
 
 //####################################################################################################
@@ -48,8 +50,12 @@ function setup()
 	block_row1 = document.getElementById("block_row1").children;
 	block_row2 = document.getElementById("block_row2").children;
 
-  addPlaceholder(block_row1);
+ 	addPlaceholder(block_row1);
 	addPlaceholder(block_row2);
+	
+	colorFilter();
+//TODO: correct resizing
+//	window.addEventListener("resize", resizeImages);
 }
 
 //adds img elements with placeholder picture to the divs 
@@ -63,12 +69,17 @@ function addPlaceholder(list)
 		let canvas = document.createElement("canvas");
 		canvas.width = window.innerWidth/8; 
 		canvas.height = window.innerHeight/2;
-		//add placeholder color
-		let context = canvas.getContext("2d");
-		//fillEmptyBlock(list, context, i);
-		addImage(placeholderSrc, canvas, context);
 		//add element as child
 		div.appendChild(canvas);
+
+		//add placeholder color
+		let context = canvas.getContext("2d");
+
+
+		//fillEmptyBlock(list, context, i);
+
+		//add image
+		canvasDataLists.push([canvas, addImage(placeholderSrc, canvas, context)]);
 	}
 }
 
@@ -92,42 +103,96 @@ function fillEmptyBlock(list, context, i)
 	context.fillRect(0,0,canvas.width,canvas.height);
 }
 
+
 function addImage(imgSrc, canvas, context)
 {
 	let img = new Image();
-	img.crossOrigin = 'Anonymous';
-
-	img.onload = context.drawImage(img, 0, 0);
-	// Perform filtering here
-	// img.onload = ... 
 	img.src = imgSrc;
+	img.onload = function()
+	{
+		let scaleFactor;
+		if (img.height>canvas.height)
+		{
+			scaleFactor = img.height/canvas.height;
+		}		
+		else
+		{
+			scaleFactor = canvas.height/img.height;
+		}
+		context.drawImage(img, 0, 0, img.width,    img.height,     // source rectangle
+													0, 0, img.width/scaleFactor, canvas.height); // destination rectangle
+	
+	};
 
-	let pixels = getPixels(img, canvas, context);
-	context.putImageData(pixels, 0, 0);
+	//console.log(canvas.parentElement, canvas.width, canvas.height);
+	return img;
 }
 
-function getPixels(img,canvas,context)
+function resizeImages()
 {
-	context.drawImage(img, 0, 0);
-	return context.getImageData(0,0,canvas.width,canvas.height);
-}
-
-function colorFilter(imgCanvas, colorIndex)
-{
-	let imageData = context.getImageData(0, 0, imgCanvas.width, imgCa.height);
-  
-
-	for (let x = 0; x < img.width; x++) {
-			for (let y = 0; y < img.height; y++) {
-					index = ((y * img.width) + x) * 4;
-					img.pixels[0] *= colors[colorIndex][0]; 
-					img.pixels[1] *= colors[colorIndex][1]; 
-					img.pixels[2] *= colors[colorIndex][2];
-					img.pixels[3] = 127; 
+	console.log("trigger");
+	for (let i=0; i < canvasDataLists.length; i++)
+	{
+		let canvas = canvasDataLists[i][0];
+		let img = canvasDataLists[i][1];
+		let imgData = canvasDataLists[i][2];
+		let context = canvas.getContext("2d");
+		canvas.width = window.innerWidth/8; 
+		canvas.height = window.innerHeight/2;
+		img.onload = function () 
+		{
+			console.log("trigger-mod");
+			let scaleFactor;
+			if (img.height>canvas.height)
+			{
+				scaleFactor = img.height/canvas.height;
+			}		
+			else
+			{
+				scaleFactor = canvas.height/img.height;
 			}
-	}
-	img.updatePixels();
+			context.drawImage(img, 0, 0, img.width, img.height,     // source rectangle
+														0, 0, img.width/scaleFactor, canvas.height); // destination rectangle
+		}
+	}											
+}
 
+function colorFilter()
+{
+	for (let i=0; i < canvasDataLists.length; i++)
+	{
+		console.log(i);
+		let canvas = canvasDataLists[i][0];
+		let img = canvasDataLists[i][1];
+		let context = canvas.getContext("2d");
+		img.onload = function() 
+		{
+			let scaleFactor;
+			if (img.height>canvas.height)
+			{
+				scaleFactor = img.height/canvas.height;
+			}		
+			else
+			{
+				scaleFactor = canvas.height/img.height;
+			}
+			context.drawImage(img, 0, 0, img.width,    img.height,     // source rectangle
+				0, 0, img.width/scaleFactor, canvas.height); // destination rectangle
+
+			let imgData = context.getImageData(0,0,img.width,img.height);
+			let filterOpacity = 0.4;
+			for (let pixelIndex=0;pixelIndex<imgData.data.length;pixelIndex+=4)
+			{
+				imgData.data[pixelIndex] = imgData.data[pixelIndex] * (1-filterOpacity) + colors[i][0] * (filterOpacity); 
+				imgData.data[pixelIndex+1] =  imgData.data[pixelIndex] * (1-filterOpacity) + colors[i][1] * (filterOpacity); 
+				imgData.data[pixelIndex+2] =  imgData.data[pixelIndex] * (1-filterOpacity) + colors[i][2] * (filterOpacity); 
+				imgData.data[pixelIndex+3] = 255; 
+			}
+			context.putImageData(imgData,0, 0, 0,0, img.width, img.height);
+		} 
+
+		
+	}
 }
 
 //####################################################################################################
