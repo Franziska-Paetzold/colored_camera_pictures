@@ -1,3 +1,15 @@
+/* no scolling */
+html
+{ 
+    overflow: hidden;
+}
+
+body
+{
+    margin: 0%;
+    padding: 0%;
+}
+
 #block_row1 
 {
     display: block;
@@ -13,14 +25,14 @@
 div.block_row1 > *
 {
     float: left;
-    width: 12.1vw;
-    height: 49vh;
+    width: 12.5vw;
+    height: 50vh;
 }
 
 div.block_row2 > *
 {
     float: left;
-    width: 12.1vw;
-    height: 49vh;
+    width: 12.5vw;
+    height: 50vh;
 }
 

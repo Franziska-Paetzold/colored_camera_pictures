@@ -1,6 +1,6 @@
 "use strict";
 
-//##################################### varibales declaration ########################################
+//########################### varibales declaration and initialization ################################
 
 let block_row1 = [];
 let block_row2 = [];
@@ -35,6 +35,7 @@ let colors = [color1,color2,color3,color4,color5,color6,color7,color8,color9,col
 
 //####################################################################################################
 
+//just for testing
 function preload() 
 {
 	//font1 = loadFont('assets/Aileron-Light.otf');
@@ -49,7 +50,6 @@ function setup()
 
   addPlaceholder(block_row1);
 	addPlaceholder(block_row2);
-	colorFilter(img, colorNum);
 }
 
 //adds img elements with placeholder picture to the divs 
@@ -57,31 +57,65 @@ function addPlaceholder(list)
 {
 	for (let i=0; i<list.length; i++)
 	{
-		let img = document.createElement("img");
-		img.src = placeholderSrc;
-		
-
-		//add the picture to a canvas to be able to set a color filter
-		let imgCanvas = document.createElement("canvas");
-		imgCanvas.width = img.width;
-		imgCanvas.height = img.height;
-		imgCanvas.ctx = imgCanvas.getContext("2d");
-		imgCanvas.ctx.drawImage(img, 0, 0);
-
-
-		//colorFilter(img, i);
-		console.log(i);
 		let currDivId = list[i].id;
-
-		console.log(currDivId );
 		let div = document.getElementById(currDivId);
-		div.appendChild(img);
+		//create canvas to make modifying (filter) of images possible
+		let canvas = document.createElement("canvas");
+		canvas.width = window.innerWidth/8; 
+		canvas.height = window.innerHeight/2;
+		//add placeholder color
+		let context = canvas.getContext("2d");
+		//fillEmptyBlock(list, context, i);
+		addImage(placeholderSrc, canvas, context);
+		//add element as child
+		div.appendChild(canvas);
 	}
 }
 
-function colorFilter(img, colorIndex)
+//get rgb(r,g,b) as string from a specific index
+function getColor(index)
 {
-	img.loadPixels();
+	return "rgb("+colors[index][0]+","+colors[index][1]+","+colors[index][2]+")"
+}
+
+function fillEmptyBlock(list, context, i)
+{
+	//change i to get the right color index
+	if(list == block_row1)
+	{
+		context.fillStyle = getColor(i);
+	}
+	else
+	{
+		context.fillStyle = getColor(i+8);
+	}		
+	context.fillRect(0,0,canvas.width,canvas.height);
+}
+
+function addImage(imgSrc, canvas, context)
+{
+	let img = new Image();
+	img.crossOrigin = 'Anonymous';
+
+	img.onload = context.drawImage(img, 0, 0);
+	// Perform filtering here
+	// img.onload = ... 
+	img.src = imgSrc;
+
+	let pixels = getPixels(img, canvas, context);
+	context.putImageData(pixels, 0, 0);
+}
+
+function getPixels(img,canvas,context)
+{
+	context.drawImage(img, 0, 0);
+	return context.getImageData(0,0,canvas.width,canvas.height);
+}
+
+function colorFilter(imgCanvas, colorIndex)
+{
+	let imageData = context.getImageData(0, 0, imgCanvas.width, imgCa.height);
+  
 
 	for (let x = 0; x < img.width; x++) {
 			for (let y = 0; y < img.height; y++) {
