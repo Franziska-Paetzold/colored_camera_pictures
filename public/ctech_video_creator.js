@@ -28,8 +28,13 @@ let color16 = [252,233,21];
 
 let colors = [color1,color2,color3,color4,color5,color6,color7,color8,color9,color10,color11,color12,color13,color14,color15,color16];
 
-//block canvases + images
+//block canvases + current images
 let canvasDataLists = [];
+
+let imageList = [];
+
+let animationCounter;
+let globalIndex;
 
 //let socket = io();
 
@@ -49,6 +54,9 @@ function preload()
 
 function setup() 
 {
+	animationCounter = 0;
+	globalIndex =0;
+
 	block_row1 = document.getElementById("block_row1").children;
 	allBlocks.push(block_row1);
 	block_row2 = document.getElementById("block_row2").children;
@@ -57,7 +65,7 @@ function setup()
  	addPlaceholder(block_row1);
 	addPlaceholder(block_row2);
 	
-	//sets color filters
+	//sets color filters every sec
 	moveContent();
 //TODO: correct resizing
 //	window.addEventListener("resize", resizeImages);
@@ -84,7 +92,9 @@ function addPlaceholder(list)
 		//fillEmptyBlock(list, context, i);
 
 		//add image
-		canvasDataLists.push([canvas, addImage(placeholderSrc, canvas, context)]);
+		let img = addImage(placeholderSrc, canvas, context);
+		canvasDataLists.push([canvas, img]);
+		imageList.push(img);
 	}
 }
 
@@ -129,13 +139,12 @@ function addImage(imgSrc, canvas, context)
 	
 	};
 
-	//console.log(canvas.parentElement, canvas.width, canvas.height);
 	return img;
 }
 
 function resizeImages()
 {
-	console.log("trigger");
+	//console.log("trigger");
 	for (let i=0; i < canvasDataLists.length; i++)
 	{
 		let canvas = canvasDataLists[i][0];
@@ -146,7 +155,7 @@ function resizeImages()
 		canvas.height = window.innerHeight/2;
 		img.onload = function () 
 		{
-			console.log("trigger-mod");
+			//console.log("trigger-mod");
 			let scaleFactor;
 			if (img.height>canvas.height)
 			{
@@ -162,87 +171,80 @@ function resizeImages()
 	}											
 }
 
-function moveCanvases()
-{
-	
-	let id = setInterval(frame, 1000);
-	let index = 0;
-	function frame() 
-	{
-		//move picture
-
-		//move filter
-		colorFilter(index);
-		index++;
-
-	}
-}
 
 //TODO
 function moveContent()
-{
-	
-	let counter = 0;
+{	
 	//iterate trough canvases
 	for (let i=0; i < canvasDataLists.length; i++)
 	{
-		let colorIndexOrigin =i;
+		globalIndex =i;
+		console.log("rechaed: "+globalIndex);
 		let canvas = canvasDataLists[i][0];
 		let img = canvasDataLists[i][1];
 		let context = canvas.getContext("2d");
-		setInterval(function()
-				{
-					counter++;
-					console.log(counter);
-				}, 1000)
-			(counter);
-		colorFilter(canvas, img, context, colorIndexOrigin, counter);
-		
-	}	
+		colorFilter(canvas, img, context);
+	}
 }
 
 
-function colorFilter(canvas, img, context,index, counter)
+function colorFilter(canvas, img, context)
 {
-	let localColorIndex = index;
-	let helpIndex = index + counter;
-	if (helpIndex >= colors.length)
-	{
-		localColorIndex = helpIndex-colors.length;
-	}
-	else
-	{
-		localColorIndex = helpIndex;
-	}		
-	let currColor = colors[localColorIndex];
-
 	img.onload = function() 
-	{			
-		console.log("trigger");
-		let scaleFactor;
-		if (img.height>canvas.height)
+	{		
+		let localAnimator = setInterval(frame, 1000 );	
+		function frame()
 		{
-			scaleFactor = img.height/canvas.height;
-		}		
-		else
-		{
-			scaleFactor = canvas.height/img.height;
-		}
-		context.drawImage(img, 0, 0, img.width,    img.height,     // source rectangle
-			0, 0, img.width/scaleFactor, canvas.height); // destination rectangle
+			if (animationCounter < colors.length)
+			{
+				let currIndex = animationCounter;
+				let helpIndex = globalIndex + currIndex;
+				if (helpIndex >= colors.length)
+				{
+					currIndex = helpIndex-colors.length;
+				}
+				else
+				{
+					currIndex = helpIndex;
+				}		
+				console.log(currIndex, animationCounter, globalIndex);
+				let currColor = colors[currIndex];
+				let scaleFactor;
+				if (img.height>canvas.height)
+				{
+					scaleFactor = img.height/canvas.height;
+				}		
+				else
+				{
+					scaleFactor = canvas.height/img.height;
+				}
+				context.drawImage(img, 0, 0, img.width,    img.height,     // source rectangle
+					0, 0, img.width/scaleFactor, canvas.height); // destination rectangle
 
-		let imgData = context.getImageData(0,0,img.width,img.height);
-		let filterOpacity = 0.4;
-		for (let pixelIndex=0;pixelIndex<imgData.data.length;pixelIndex+=4)
-		{
-			imgData.data[pixelIndex] = imgData.data[pixelIndex] * (1-filterOpacity) + currColor[0] * (filterOpacity); 
-			imgData.data[pixelIndex+1] =  imgData.data[pixelIndex] * (1-filterOpacity) + currColor[1] * (filterOpacity); 
-			imgData.data[pixelIndex+2] =  imgData.data[pixelIndex] * (1-filterOpacity) + currColor[2] * (filterOpacity); 
-			imgData.data[pixelIndex+3] = 255; 
+				let imgData = context.getImageData(0,0,img.width,img.height);
+				let filterOpacity = 0.4;
+				for (let pixelIndex=0;pixelIndex<imgData.data.length;pixelIndex+=4)
+				{
+					imgData.data[pixelIndex] = imgData.data[pixelIndex] * (1-filterOpacity) + currColor[0] * (filterOpacity); 
+					imgData.data[pixelIndex+1] =  imgData.data[pixelIndex] * (1-filterOpacity) + currColor[1] * (filterOpacity); 
+					imgData.data[pixelIndex+2] =  imgData.data[pixelIndex] * (1-filterOpacity) + currColor[2] * (filterOpacity); 
+					imgData.data[pixelIndex+3] = 255; 
+				}
+				context.putImageData(imgData,0, 0, 0,0, img.width, img.height);
+
+				animationCounter++;
+				console.log("reached");
+			}
+			else
+			{
+				animationCounter = 0;
+				clearInterval(localAnimator);
+			}
+			
 		}
-		context.putImageData(imgData,0, 0, 0,0, img.width, img.height);
 	}
 }
+
 
 //####################################################################################################
 
