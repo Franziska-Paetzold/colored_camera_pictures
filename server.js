@@ -6,17 +6,16 @@ const PORT = process.env.PORT || 3000;
 const server = express().use(express.static('public')).listen(PORT, port);
 
 let Schema = mongoose.Schema;
-const dbUrl = "mongodb://admin:admin123@ds141674.mlab.com:41674/storytelling"
+const dbUrl = "mongodb://admin:password123@ds223605.mlab.com:23605/ctech_image_fun"
 
-let ScentenceSchema = new Schema(
+let ImageSchema = new Schema(
     {
-        key: Number,
-        scentence: String,
-        font: String
+        imgSrc: String
     });
-let Scentence = mongoose.model('story_scentence', ScentenceSchema);
-    
-//communication pipe
+
+let Image = mongoose.model('image', ImageSchema);
+     
+
 const io = socketIO(server); 
 io.on('connection', connectionLive); 
 
@@ -43,59 +42,48 @@ function connectionLive(socket)
 {
     console.log('Client connected');
 
-    Scentence.find(getAllSentencesFromDB);
-    function getAllSentencesFromDB(err, data)
+    Image.find(getAllImagesFromDB);
+    function getAllImagesFromDB(err, data)
     {
         if (err) return console.error(err);
 
         if(data.length == 0)
         {
-            console.log('Init Database');
-            socket.emit('getScentences');
+           // getNewScentence(data);
+           console.log('empty database');
         }
         else
         {
             console.log('Init Client');
-            socket.emit('initSketch', data);
+            io.emit('initSketch', data);
+            console.log(data);
         }
     }
 
-    socket.on('sayingHello', receivingHello);
-    socket.on('setNewScentence', getNewScentence);
+    socket.on('addImageToDatabase', getNewImage);
 
-    function receivingHello(data)
-    {
-        console.log('Got the hello', data);
-    }
 
-    function getNewScentence(data)
+    function getNewImage(data)
     {
         console.log('Got data: ', data);
-        socket.broadcast.emit('broadcastScentence', data);
-
-        Scentence.findOne({ key:Number(data.key) }, saveData);
+        
+        Image.findOne({ index:Number(data.index) }, saveData);
         function saveData(err, dataDb)
         {
             // console.log('Save data', dataDb);
             if (err) return console.error(err);
-
-            if(dataDb !== null) // update
+           
+            let tmpImage = new Image(data);
+            tmpImage.save(saveNewImage);
+            function saveNewImage(err, element) 
             {
-                dataDb.scentence = data.scentence;
-                dataDb.font = data.font;
-                dataDb.save();
-            }
-            else // initialize
-            {
-                let tmpScentence = new Scentence(data);
-                tmpScentence.save(saveNewScentence);
-                function saveNewScentence(err, element) 
-                {
-                    if (err) return console.error(err);
+                if (err) return console.error(err);
 
-                    console.log('New element saved', element);
-                };
-            }
+                console.log('New element saved', element);
+            };
+            
         };
+
+        Image.find(getAllImagesFromDB);
     }
 };
